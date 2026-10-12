@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vigas ACI318</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vigas ACI">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#e9edf1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#22272d" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icono-180.png">
+<link rel="icon" type="image/png" href="icono-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Hoja de cálculo de una columna: entradas arriba, resultados en bloque hundido, teclado propio abajo en el teléfono. */
+:root {
+  --bg: #e9edf1;
+  --sup: #ffffff;
+  --fg: #1b2530;
+  --tenue: #5a6673;
+  --linea: #c9d1d9;
+  --acento: #2c5d92;
+  --hundido: #dde4eb;
+  --mal: #b3261e;
+  --tecla: #f6f8fa;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #22272d; --sup: #2d343c; --fg: #eef1f4; --tenue: #a4aeb9; --linea: #47515c;
+    --acento: #86b6ea; --hundido: #1a1f24; --mal: #ff8a80; --tecla: #39424c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #22272d; --sup: #2d343c; --fg: #eef1f4; --tenue: #a4aeb9; --linea: #47515c;
+  --acento: #86b6ea; --hundido: #1a1f24; --mal: #ff8a80; --tecla: #39424c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--sans); font-size: 15px; line-height: 1.35;
+  padding-inline: 16px; padding-block: 14px 24px;
+  -webkit-text-size-adjust: 100%;
+}
+main { max-width: 460px; margin-inline: auto; display: flex; flex-direction: column; gap: 14px; }
+body.teclado main { padding-bottom: 250px; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+h1 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+header span { font: 12px var(--mono); color: var(--tenue); }
+section { display: flex; flex-direction: column; gap: 8px; }
+h2 {
+  margin: 0; font-size: 11.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.09em; color: var(--tenue);
+}
+.grilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; }
+.campo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.campo label, .campo .rot { font-size: 13px; font-weight: 500; white-space: nowrap; }
+.campo small { font: 11.5px var(--mono); color: var(--tenue); font-weight: 400; }
+input, select {
+  width: 100%; height: 40px; padding: 0 9px;
+  font: 500 16px var(--mono); font-variant-numeric: tabular-nums; text-align: right;
+  color: var(--fg); background: var(--sup);
+  border: 1px solid var(--linea); border-radius: 4px;
+}
+select { text-align: left; padding-right: 4px; }
+input:focus, select:focus { outline: 2px solid var(--acento); outline-offset: -1px; border-color: var(--acento); }
+input.mal { border-color: var(--mal); color: var(--mal); }
+.res { background: var(--hundido); border-radius: 6px; padding: 10px 12px; }
+.res .grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+.dato { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.dato .rot { font-size: 13px; font-weight: 500; white-space: nowrap; }
+.dato .rot small { font: 11.5px var(--mono); color: var(--tenue); }
+output { font: 600 21px var(--mono); font-variant-numeric: tabular-nums; color: var(--acento); }
+.nota { font-size: 12.5px; color: var(--tenue); min-height: 17px; margin-top: 6px; }
+.nota.mal { color: var(--mal); font-weight: 500; }
+.nota span { font-family: var(--mono); }
+#pad {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+  background: var(--hundido); border-top: 1px solid var(--linea);
+  padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+}
+#pad .vista {
+  max-width: 460px; margin: 0 auto 6px; height: 20px; padding-inline: 4px;
+  font: 13px var(--mono); color: var(--tenue); text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#pad .teclas { max-width: 460px; margin-inline: auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+#pad button {
+  height: 46px; border: 1px solid var(--linea); border-radius: 5px;
+  background: var(--tecla); color: var(--fg); font: 500 19px var(--mono);
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; cursor: pointer;
+}
+#pad button.op { color: var(--acento); }
+#pad button.ok { background: var(--acento); border-color: var(--acento); color: var(--sup); font: 600 15px var(--sans); }
+#pad button:active { filter: brightness(0.9); }
+</style>
+
+</head>
+<body>
+<main>
+  <header>
+    <h1>Vigas ACI318</h1>
+    <span>ACI 318-19 · v2.0</span>
+  </header>
+
+  <section>
+    <h2>Propiedades sección</h2>
+    <div class="grilla">
+      <div class="campo"><label for="B">B <small>[cm]</small></label><input id="B" class="calc" value="80" autocomplete="off"></div>
+      <div class="campo"><label for="h">h <small>[cm]</small></label><input id="h" class="calc" value="16" autocomplete="off"></div>
+      <div class="campo"><label for="rec" title="Distancia del borde al centro de la armadura (d = h − Rec)">Rec <small>[cm]</small></label><input id="rec" class="calc" value="3" autocomplete="off"></div>
+      <div class="campo"><label for="horm">Hormigón</label>
+        <select id="horm">
+          <option value="170">G17</option><option value="200">G20</option><option value="250" selected>G25</option>
+          <option value="300">G30</option><option value="350">G35</option><option value="400">G40</option>
+          <option value="450">G45</option><option value="500">G50</option>
+        </select></div>
+      <div class="campo"><label for="fy">fy <small>[kg/cm²]</small></label><input id="fy" class="calc" value="4200" autocomplete="off"></div>
+      <div class="campo"><label for="phiV" title="Factor de reducción para corte">ϕ <small>corte</small></label>
+        <select id="phiV"><option value="0.75" selected>0.75</option><option value="0.6">0.60</option></select></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Esfuerzos</h2>
+    <div class="grilla">
+      <div class="campo"><label for="Mu">Mu <small>[T·m]</small></label><input id="Mu" class="calc" data-opc="1" value="3.1" autocomplete="off"></div>
+      <div class="campo"><label for="Nu" title="Positivo = compresión">Nu <small>[T] +comp.</small></label><input id="Nu" class="calc" data-opc="1" value="0" autocomplete="off"></div>
+      <div class="campo"><label for="Qu">Qu <small>[T]</small></label><input id="Qu" class="calc" data-opc="1" value="1" autocomplete="off"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Armaduras</h2>
+    <div class="res">
+      <div class="grilla">
+        <div class="dato"><span class="rot" title="Armadura en tracción">A <small>[cm²]</small></span><output id="oA">—</output></div>
+        <div class="dato"><span class="rot" title="Armadura transversal total (2 ramas) por metro">2Av <small>[cm²/m]</small></span><output id="oAv">—</output></div>
+        <div class="dato"><span class="rot" title="Armadura en compresión">Ac <small>[cm²]</small></span><output id="oAc">—</output></div>
+        <div class="dato"><span class="rot" title="Qu / (B·d)">τ <small>[kg/cm²]</small></span><output id="oTau">—</output></div>
+      </div>
+      <div class="nota" id="notaD"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Momento resistente con armadura dada</h2>
+    <div class="grilla">
+      <div class="campo"><label for="As" title="Armadura en tracción colocada">A <small>[cm²]</small></label><input id="As" class="calc" data-opc="1" value="5*1.13" autocomplete="off"></div>
+      <div class="campo"><label for="Asc" title="Armadura en compresión colocada">Ac <small>[cm²]</small></label><input id="Asc" class="calc" data-opc="1" value="0" autocomplete="off"></div>
+      <div class="campo"><span class="rot">Mu / ϕMn</span><input id="oFU" readonly tabindex="-1" value="—" aria-label="Mu sobre fi Mn"></div>
+    </div>
+    <div class="res">
+      <div class="dato"><span class="rot">ϕMn <small>[T·m]</small></span><output id="oMn">—</output></div>
+      <div class="nota" id="notaV"></div>
+    </div>
+  </section>
+</main>
+
+<div id="pad" hidden>
+  <div class="vista" id="vista"></div>
+  <div class="teclas">
+    <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button><button type="button" class="op" data-k="/">÷</button><button type="button" class="op" data-k="del" aria-label="Borrar">⌫</button>
+    <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button><button type="button" class="op" data-k="*">×</button><button type="button" class="op" data-k="(">(</button>
+    <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" class="op" data-k="-">−</button><button type="button" class="op" data-k=")">)</button>
+    <button type="button" data-k="0">0</button><button type="button" data-k=".">.</button><button type="button" class="op" data-k="clr">C</button><button type="button" class="op" data-k="+">+</button><button type="button" class="ok" data-k="ok">OK</button>
+  </div>
+</div>
+
+<script>
+/*CALC*/
+var ES = 2.1e6; // kgf/cm2
+
+// Evalúa + − × ÷ y paréntesis; devuelve NaN si la expresión no es válida.
+function evaluar(txt) {
+  var s = String(txt).replace(/\s+/g, '').replace(/,/g, '.').replace(/[×xX]/g, '*').replace(/[÷:]/g, '/').replace(/[−–]/g, '-');
+  if (!s) return NaN;
+  var i = 0;
+  function expr() {
+    var v = term();
+    while (s[i] === '+' || s[i] === '-') { var o = s[i++], t = term(); v = o === '+' ? v + t : v - t; }
+    return v;
+  }
+  function term() {
+    var v = fac();
+    while (s[i] === '*' || s[i] === '/') { var o = s[i++], t = fac(); v = o === '*' ? v * t : v / t; }
+    return v;
+  }
+  function fac() {
+    if (s[i] === '-') { i++; return -fac(); }
+    if (s[i] === '+') { i++; return fac(); }
+    if (s[i] === '(') { i++; var v = expr(); if (s[i] !== ')') throw 0; i++; return v; }
+    var m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
+    if (!m) throw 0;
+    i += m[0].length;
+    return parseFloat(m[0]);
+  }
+  try { var r = expr(); return i === s.length && isFinite(r) ? r : NaN; } catch (e) { return NaN; }
+}
+
+function beta1(fc) { return fc <= 280 ? 0.85 : Math.max(0.65, 0.85 - 0.05 * (fc - 280) / 70); }
+
+// Diseño a flexión y corte. b, h, rec en cm; fc, fy en kgf/cm2; Mu en T·m; Nu (+ compresión) y Qu en T.
+function disenar(b, h, rec, fc, fy, phiV, Mu, Nu, Qu) {
+  var d = h - rec;
+  if (!(b > 0 && d > 0 && rec >= 0 && fc > 0 && fy > 0)) return { error: 'Revisar la sección' };
+  var M = Math.abs(Mu) * 1e5, N = Nu * 1000, V = Math.abs(Qu) * 1000;
+  var r = { d: d, A: 0, Ac: 0, nota: '' };
+
+  // Flexión: momento respecto a la armadura en tracción, sección controlada por tracción (ϕ = 0,9)
+  var phi = 0.9, k = 0.85 * fc * b;
+  var Mn = (M + N * (d - h / 2)) / phi;
+  if (Mn > 0) {
+    var ety = fy / ES;
+    var cmax = d * 0.003 / (0.006 + ety), amax = beta1(fc) * cmax;
+    var disc = d * d - 2 * Mn / k;
+    var a = disc >= 0 ? d - Math.sqrt(disc) : Infinity;
+    if (a <= amax) {
+      r.A = (k * a - N / phi) / fy;
+    } else {
+      var fsc = Math.min(fy, ES * 0.003 * (cmax - rec) / cmax);
+      if (!(fsc > 0 && d - rec > 0)) return { error: 'Sección insuficiente a flexión' };
+      r.Ac = (Mn - k * amax * (d - amax / 2)) / (fsc * (d - rec));
+      r.A = (k * amax + r.Ac * fsc - N / phi) / fy;
+    }
+    if (r.A < 0) r.A = 0;
+  }
+
+  // Corte: Vc = 0,53·√f'c·B·d, corregido por carga axial
+  var Ag = b * h, raiz = Math.sqrt(fc) * b * d;
+  var fN = N >= 0 ? 1 + N / (140 * Ag) : Math.max(0, 1 + N / (35 * Ag));
+  var Vs = V / phiV - 0.53 * fN * raiz;
+  r.tau = V / (b * d);
+  r.Av = Vs > 0 ? Vs / (fy * d) * 100 : 0;
+  if (Vs > 2.2 * raiz) { r.nota = 'Sección insuficiente al corte'; r.mal = true; }
+  else r.nota = Vs > 1.1 * raiz ? 'espaciamiento a d/4' : 'espaciamiento a d/2';
+  return r;
+}
+
+// ϕMn con armadura dada (compatibilidad de deformaciones, εcu = 0,003) para el Nu indicado.
+function resistir(b, h, rec, fc, fy, As, Asc, Nu) {
+  var d = h - rec;
+  if (!(b > 0 && d > 0 && rec >= 0 && fc > 0 && fy > 0)) return { error: 'Revisar la sección' };
+  if (!(As >= 0 && Asc >= 0)) return { error: 'Revisar la armadura' };
+  var N = Nu * 1000, b1 = beta1(fc), ety = fy / ES;
+  function estado(c) {
+    var a = Math.min(b1 * c, h), Cc = 0.85 * fc * b * a;
+    var et = 0.003 * (d - c) / c;
+    var fs = Math.max(-fy, Math.min(fy, ES * et));
+    var fsc = Math.max(-fy, Math.min(fy, ES * 0.003 * (c - rec) / c));
+    var phi = et >= ety + 0.003 ? 0.9 : et <= ety ? 0.65 : 0.65 + 0.25 * (et - ety) / 0.003;
+    var Pn = Cc + Asc * fsc - As * fs;
+    var Mn = Cc * (h / 2 - a / 2) + Asc * fsc * (h / 2 - rec) + As * fs * (d - h / 2);
+    return { c: c, et: et, phi: phi, g: phi * Pn - N, Mn: Mn };
+  }
+  var n = 600, c0 = d * 1e-4, c1 = 3 * h, ant = estado(c0);
+  if (ant.g > 0) return { error: 'Nu de tracción mayor que la resistencia' };
+  for (var j = 1; j <= n; j++) {
+    var act = estado(c0 + (c1 - c0) * j / n);
+    if (act.g >= 0) {
+      var lo = ant.c, hi = act.c;
+      for (var it = 0; it < 60; it++) { var m = (lo + hi) / 2; if (estado(m).g >= 0) hi = m; else lo = m; }
+      var e = estado(hi);
+      return { phiMn: e.phi * e.Mn / 1e5, c: e.c, et: e.et, phi: e.phi };
+    }
+    ant = act;
+  }
+  return { error: 'Nu mayor que la resistencia a compresión' };
+}
+/*FIN*/
+
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var campos = Array.prototype.slice.call(document.querySelectorAll('input.calc'));
+  var guardables = campos.concat([$('horm'), $('phiV')]);
+  var CLAVE = 'vigas-aci318';
+  var tactil = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  var pad = $('pad'), vista = $('vista'), activo = null;
+
+  try {
+    var prev = JSON.parse(localStorage.getItem(CLAVE) || '{}');
+    guardables.forEach(function (el) { if (typeof prev[el.id] === 'string' && prev[el.id] !== '') el.value = prev[el.id]; });
+  } catch (e) {}
+
+  function valor(el) {
+    var t = el.value.trim();
+    var v = t === '' && el.dataset.opc ? 0 : evaluar(t);
+    el.classList.toggle('mal', isNaN(v));
+    return v;
+  }
+  function fmt(v, dec) { return isFinite(v) ? v.toFixed(dec) : '—'; }
+  function limpio(v) { return String(parseFloat(v.toFixed(4))); }
+
+  function calcular() {
+    var v = {};
+    campos.forEach(function (el) { v[el.id] = valor(el); });
+    var fc = parseFloat($('horm').value), phiV = parseFloat($('phiV').value);
+    var okSec = !isNaN(v.B + v.h + v.rec + v.fy);
+
+    var nd = $('notaD'), r = null;
+    if (okSec && !isNaN(v.Mu + v.Nu + v.Qu)) r = disenar(v.B, v.h, v.rec, fc, v.fy, phiV, v.Mu, v.Nu, v.Qu);
+    var hay = r && !r.error;
+    $('oA').textContent = hay ? fmt(r.A, 1) : '—';
+    $('oAc').textContent = hay ? fmt(r.Ac, 1) : '—';
+    $('oAv').textContent = hay ? fmt(r.Av, 1) : '—';
+    $('oTau').textContent = hay ? fmt(r.tau, 1) : '—';
+    nd.textContent = r ? (r.error || r.nota) : '';
+    nd.classList.toggle('mal', !!(r && (r.error || r.mal)));
+
+    var nv = $('notaV'), q = null;
+    if (okSec && !isNaN(v.As + v.Asc + v.Nu)) q = resistir(v.B, v.h, v.rec, fc, v.fy, v.As, v.Asc, v.Nu);
+    var hayQ = q && !q.error;
+    $('oMn').textContent = hayQ ? fmt(q.phiMn, 2) : '—';
+    $('oFU').value = hayQ && !isNaN(v.Mu) && q.phiMn > 0 ? fmt(Math.abs(v.Mu) / q.phiMn, 2) : '—';
+    $('oFU').classList.toggle('mal', hayQ && Math.abs(v.Mu) > q.phiMn * 1.0005);
+    nv.classList.toggle('mal', !!(q && q.error));
+    if (hayQ) nv.innerHTML = '<span>c = ' + fmt(q.c, 1) + ' cm · εt = ' + fmt(q.et * 1000, 1) + ' ‰ · ϕ = ' + fmt(q.phi, 2) + '</span>';
+    else nv.textContent = q ? q.error : '';
+
+    if (activo) {
+      var x = evaluar(activo.value);
+      vista.textContent = /[-+*/()×÷]/.test(activo.value.trim().replace(/^[-+]/, '')) ? (isNaN(x) ? '…' : '= ' + limpio(x)) : '';
+    }
+    try {
+      var g = {};
+      guardables.forEach(function (el) { g[el.id] = el.value; });
+      localStorage.setItem(CLAVE, JSON.stringify(g));
+    } catch (e) {}
+  }
+
+  // Al salir del campo, la operación se reemplaza por su resultado.
+  function confirmar(el) {
+    var x = evaluar(el.value);
+    if (!isNaN(x) && el.value.trim() !== limpio(x)) { el.value = limpio(x); calcular(); }
+  }
+
+  campos.forEach(function (el) {
+    if (tactil) el.setAttribute('inputmode', 'none');
+    el.addEventListener('input', calcular);
+    el.addEventListener('focus', function () {
+      activo = el;
+      if (tactil) { pad.hidden = false; document.body.classList.add('teclado'); }
+      setTimeout(function () {
+        if (document.activeElement === el) { el.select(); if (tactil) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      }, 0);
+      calcular();
+    });
+    el.addEventListener('blur', function () {
+      confirmar(el);
+      setTimeout(function () {
+        if (campos.indexOf(document.activeElement) < 0) {
+          activo = null; pad.hidden = true; document.body.classList.remove('teclado');
+        }
+      }, 120);
+    });
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') { confirmar(el); el.select(); } });
+  });
+  [$('horm'), $('phiV')].forEach(function (el) { el.addEventListener('change', calcular); });
+
+  // Teclado propio: las teclas no le quitan el foco al campo.
+  ['pointerdown', 'mousedown'].forEach(function (ev) { pad.addEventListener(ev, function (e) { e.preventDefault(); }); });
+  pad.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b || !activo) return;
+    var el = activo, k = b.dataset.k;
+    if (k === 'ok') { el.blur(); return; }
+    if (document.activeElement !== el) el.focus();
+    var s = el.selectionStart, f = el.selectionEnd;
+    if (k === 'clr') el.value = '';
+    else if (k === 'del') { if (s === f && s > 0) s--; el.setRangeText('', s, f, 'end'); }
+    else el.setRangeText(k, s, f, 'end');
+    calcular();
+  });
+
+  calcular();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(function () {});
+})();
+</script>
+</body>
+</html>
