@@ -1,5 +1,5 @@
 // Con conexión trae la versión nueva; sin conexión usa la copia guardada.
-const CACHE = 'vigas-aci318-v1';
+const CACHE = 'vigas-aci318-v2';
 const BASE = ['./', 'index.html', 'manifest.webmanifest', 'icono-180.png', 'icono-512.png'];
 
 self.addEventListener('install', (e) => {
